@@ -5,8 +5,9 @@
   ...
 }: {
   imports = [
-    # Include the results of the hardware scan.
     ./hardware-configuration.nix
+    ./apps/bitcoind.nix
+    ./apps/lnd.nix
   ];
 
   boot.loader.grub.enable = false;
