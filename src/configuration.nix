@@ -1,14 +1,18 @@
-
-{ config, lib, pkgs, ... }:
-
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-    ];
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+  ];
 
   boot.loader.grub.enable = false;
   boot.loader.generic-extlinux-compatible.enable = true;
+
+  nix.extraOptions = "experimental-features = nix-command flakes";
 
   networking.hostName = "tbnix"; # Define your hostname.
   time.timeZone = "Europe/Berlin";
@@ -21,31 +25,30 @@
 
   users.users.admin = {
     isNormalUser = true;
-    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+    extraGroups = ["wheel"]; # Enable ‘sudo’ for the user.
     packages = with pkgs; [
     ];
   };
 
   environment.systemPackages = with pkgs; [
-    neovim 
+    neovim
     wget
   ];
 
   # Enable the OpenSSH daemon.
   services.openssh = {
     enable = true;
-    ports =  [ 22 ];
+    ports = [22];
     settings = {
       PasswordAuthentication = true;
-      AllowUsers = [ "admin" ];
+      AllowUsers = ["admin"];
       UseDns = true;
       X11Forwarding = false;
       PermitRootLogin = "prohibit-password";
     };
   };
 
-  networking.firewall.allowedTCPPorts = [ 22 ];
+  networking.firewall.allowedTCPPorts = [22];
 
   system.stateVersion = "23.11"; # Did you read the comment?
 }
-
