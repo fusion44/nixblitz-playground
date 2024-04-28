@@ -1,11 +1,11 @@
 {
   description = "NixBlitz dev env";
   inputs = {
+    naersk.url = "github:nix-community/naersk/master";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
   outputs = {
-    self,
     nixpkgs,
     flake-utils,
   }:
@@ -15,10 +15,18 @@
       };
     in {
       devShell = with pkgs;
-        mkShell rec {
+        mkShell {
           buildInputs = [
-            alejandra
+            alejandra # nix formatter
+            cargo # rust package manager
+            rust-analyzer
+            lldb_18 # for rust debugging
+            rustc # rust compiler
+            rustfmt
+            pre-commit # https://pre-commit.com
+            rustPackages.clippy # rust linter
           ];
+          RUST_SRC_PATH = rustPlatform.rustLibSrc;
         };
     });
 }

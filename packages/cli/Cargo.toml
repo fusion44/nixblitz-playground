@@ -1,0 +1,8 @@
+[package]
+name = "nixblitz_cli"
+version = "0.1.0"
+authors 	 = ["fusion44"]
+edition = "2021"
+
+[dependencies]
+nixbitcoin-config = { path = "../nixbitcoin-config" }
