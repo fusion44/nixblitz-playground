@@ -1,11 +1,11 @@
 {
   description = "NixBlitz dev env";
   inputs = {
-    naersk.url = "github:nix-community/naersk/master";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
   outputs = {
+    self,
     nixpkgs,
     flake-utils,
   }:
