@@ -17,7 +17,7 @@ mod config_models {
         pub name: String,
     }
 
-    #[derive(Validate, Serialize, Deserialize)]
+    #[derive(Validate, Serialize, Deserialize, Default)]
     pub struct BitcoinDaemonService {
         /// The name of the instance.
         #[garde(skip)]
@@ -40,7 +40,7 @@ mod config_models {
         pub rpc_users: Option<Vec<BitcoinDaemonServiceRPCUser>>,
 
         /// Override the default port on which to listen for JSON-RPC connections.
-        #[garde(skip)]
+        #[garde(range(min = 1024, max = 65535))]
         pub rpc_port: Option<u16>,
 
         /// Whether to prune the node
@@ -50,7 +50,7 @@ mod config_models {
         pub prune: Option<String>,
 
         /// Override the default port on which to listen for connections.
-        #[garde(skip)]
+        #[garde(range(min = 1024, max = 65535))]
         pub port: Option<u16>,
 
         /// Location of bitcoind pid file.
@@ -134,6 +134,39 @@ mod config_models {
                 data_dir,
                 config_file_path,
             }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_bitcoin_daemon_service_creation() {
+            let service = BitcoinDaemonService {
+                name: Some("TestInstance".to_string()),
+                user: Some("testuser".to_string()),
+                port: Some(8333),
+                rpc_port: Some(9333),
+                ..BitcoinDaemonService::default()
+            };
+
+            assert_eq!(service.name, Some("TestInstance".to_string()));
+            assert_eq!(service.user, Some("testuser".to_string()));
+            assert_eq!(service.rpc_port, Some(9333));
+            assert_eq!(service.port, Some(8333));
+            assert!(service.rpc_users.is_none());
+            assert!(service.testnet.is_none());
+            assert!(service.regtest.is_none());
+            assert!(service.prune.is_none());
+            assert!(service.pid_file.is_none());
+            assert!(service.package.is_none());
+            assert!(service.group.is_none());
+            assert!(service.extra_config.is_none());
+            assert!(service.extra_cmd_line_options.is_none());
+            assert!(service.db_cache.is_none());
+            assert!(service.data_dir.is_none());
+            assert!(service.config_file_path.is_none());
         }
     }
 }
