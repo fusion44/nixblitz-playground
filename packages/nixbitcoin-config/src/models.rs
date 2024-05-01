@@ -3,7 +3,39 @@ mod config_models {
     use serde::{Deserialize, Serialize};
     use std::option::Option;
 
-    #[derive(Validate, Serialize, Deserialize)]
+    /// Represents all available Bitcoin network options
+    #[derive(Debug, Default, Serialize, Deserialize, PartialEq)]
+    pub enum BitcoinNetwork {
+        #[default]
+        /// [default] The mainnet network
+        Mainnet,
+
+        /// The testnet network
+        Testnet,
+
+        /// The regtest network
+        Regtest,
+
+        /// The signet network
+        Signet,
+    }
+
+    #[derive(Debug, Default, Serialize, Deserialize, PartialEq)]
+    pub enum PruneOptions {
+        #[default]
+        /// [default] Pruning disabled
+        Disable,
+
+        /// Manual pruning
+        Manual,
+
+        /// Automatic pruning at a certain blockchain size.
+        ///
+        /// This option requires `prune_size` to be set too.
+        Automatic,
+    }
+
+    #[derive(Debug, Validate, Serialize, Deserialize)]
     pub struct BitcoinDaemonServiceRPCUser {
         /// Password HMAC-SHA-256 for JSON-RPC connections. Must be a string of the format <SALT-HEX>$<HMAC-HEX>.
 
@@ -17,7 +49,7 @@ mod config_models {
         pub name: String,
     }
 
-    #[derive(Validate, Serialize, Deserialize, Default)]
+    #[derive(Debug, Validate, Serialize, Deserialize, Default)]
     pub struct BitcoinDaemonService {
         /// The name of the instance.
         #[garde(skip)]
@@ -29,11 +61,7 @@ mod config_models {
 
         /// Whether to use the testnet instead of mainnet.
         #[garde(skip)]
-        pub testnet: Option<bool>,
-
-        /// Whether to use regtest instead of mainnet.
-        #[garde(skip)]
-        pub regtest: Option<bool>,
+        pub network: BitcoinNetwork,
 
         /// RPC user information for JSON-RPC connections.
         #[garde(skip)]
@@ -48,6 +76,13 @@ mod config_models {
         /// null or ((unsigned integer, meaning >=0) or (one of "disable", "manual") convertible to it)
         #[garde(skip)]
         pub prune: Option<String>,
+
+        /// The size in MiB at which the blockchain on disk will be pruned.
+        ///
+        /// * Only active if prune is set to automatic
+        /// * Must be at least 1 MiB
+        #[garde(range(min = 1))]
+        pub prune_size: Option<u16>,
 
         /// Override the default port on which to listen for connections.
         #[garde(range(min = 1024, max = 65535))]
@@ -68,7 +103,7 @@ mod config_models {
         /// Additional configurations to be appended to bitcoin.conf
         /// Strings concatenated with "\n"
         /// # Example
-        //
+        ///
         /// ''
         /// par=16
         /// rpcthreads=16
@@ -101,11 +136,11 @@ mod config_models {
         pub fn new(
             name: Option<String>,
             user: Option<String>,
-            testnet: Option<bool>,
-            regtest: Option<bool>,
+            network: BitcoinNetwork,
             rpc_users: Option<Vec<BitcoinDaemonServiceRPCUser>>,
             rpc_port: Option<u16>,
             prune: Option<String>,
+            prune_size: Option<u16>,
             port: Option<u16>,
             pid_file: Option<String>,
             package: Option<String>,
@@ -119,11 +154,11 @@ mod config_models {
             Self {
                 name,
                 user,
-                testnet,
-                regtest,
+                network,
                 rpc_users,
                 rpc_port,
                 prune,
+                prune_size,
                 port,
                 pid_file,
                 package,
@@ -155,9 +190,8 @@ mod config_models {
             assert_eq!(service.user, Some("testuser".to_string()));
             assert_eq!(service.rpc_port, Some(9333));
             assert_eq!(service.port, Some(8333));
+            assert_eq!(service.network, BitcoinNetwork::Mainnet);
             assert!(service.rpc_users.is_none());
-            assert!(service.testnet.is_none());
-            assert!(service.regtest.is_none());
             assert!(service.prune.is_none());
             assert!(service.pid_file.is_none());
             assert!(service.package.is_none());
