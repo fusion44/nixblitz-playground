@@ -1,4 +1,4 @@
-rust_src := "./packages/cli"
+rust_src := "./packages"
 
 set positional-arguments
 
