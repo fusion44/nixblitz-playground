@@ -9,3 +9,8 @@ edition = "2021"
 garde = { version = "0.18.0", features = ["full"] }
 serde = { version = "1.0.199", features = ["derive"] }
 toml = "0.8.12"
+
+# crates.io version is out of date 
+# https://github.com/kamadorueda/alejandra/issues/406
+alejandra = { git = "https://github.com/kamadorueda/alejandra" }
+
