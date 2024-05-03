@@ -20,7 +20,7 @@
             alejandra # nix formatter
             cargo # rust package manager
             rust-analyzer
-            lldb_18 # for rust debugging
+            vscode-extensions.vadimcn.vscode-lldb.adapter # for rust debugging
             rustc # rust compiler
             rustfmt
             pre-commit # https://pre-commit.com
