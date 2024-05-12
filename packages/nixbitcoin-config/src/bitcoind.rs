@@ -1,3 +1,5 @@
+use core::str;
+
 use alejandra::format;
 
 use crate::utils::{self};
@@ -5,7 +7,7 @@ use garde::Validate;
 use serde::{Deserialize, Serialize};
 
 /// Represents all available Bitcoin network options
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub enum BitcoinNetwork {
     #[default]
     /// [default] The mainnet network
@@ -32,7 +34,7 @@ pub enum BitcoinNetwork {
 /// ```
 /// use nixbitcoin_config::bitcoind::PruneOptions;
 ///
-/// let options = PruneOptions::Automatic { field: 1024 };
+/// let options = PruneOptions::Automatic { prune_at: 1024 };
 /// ```
 #[derive(Debug, Validate, Default, Serialize, Deserialize, PartialEq)]
 pub enum PruneOptions {
@@ -75,6 +77,10 @@ pub struct BitcoinDaemonServiceRPCUser {
 
 #[derive(Debug, Validate, Serialize, Deserialize, Default)]
 pub struct BitcoinDaemonService {
+    /// Whether the service is enabled or not
+    #[garde(skip)]
+    pub enabled: bool,
+
     /// The name of the instance.
     #[garde(skip)]
     pub name: Option<String>,
@@ -89,7 +95,7 @@ pub struct BitcoinDaemonService {
 
     /// RPC user information for JSON-RPC connections.
     #[garde(skip)]
-    pub rpc_users: Option<Vec<BitcoinDaemonServiceRPCUser>>,
+    pub rpc_users: Vec<BitcoinDaemonServiceRPCUser>,
 
     /// Override the default port on which to listen for JSON-RPC connections.
     #[garde(range(min = 1024, max = 65535))]
@@ -111,10 +117,6 @@ pub struct BitcoinDaemonService {
     #[garde(range(min = 1024, max = 65535))]
     pub port: Option<u16>,
 
-    /// Location of bitcoind pid file.
-    #[garde(skip)]
-    pub pid_file: Option<String>,
-
     /// The bitcoind package to use.
     #[garde(skip)]
     pub package: Option<String>,
@@ -125,6 +127,7 @@ pub struct BitcoinDaemonService {
 
     /// Additional configurations to be appended to bitcoin.conf
     /// Strings concatenated with "\n"
+    ///
     /// # Example
     ///
     /// ''
@@ -148,90 +151,265 @@ pub struct BitcoinDaemonService {
     #[garde(skip)]
     pub data_dir: Option<String>,
 
-    /// The configuration file path to supply bitcoind.
-    #[garde(skip)]
-    pub config_file_path: Option<String>,
-
     /// Whether to enable the tx index
     #[garde(skip)]
     pub tx_index: Option<bool>,
+
+    /// ZMQ address for zmqpubrawtx notifications
+    ///
+    /// # Example
+    /// "tcp://127.0.0.1:28333"
+    #[garde(skip)]
+    pub zmqpubrawtx: Option<String>,
+
+    /// ZMQ address for zmqpubrawblock notifications
+    ///
+    /// # Example
+    /// "tcp://127.0.0.1:28332"
+    #[garde(skip)]
+    pub zmqpubrawblock: Option<String>,
+}
+
+pub(crate) fn clean_string(value: &str) -> Result<String, String> {
+    if value.starts_with('"') && value.ends_with('"') {
+        return Ok(value[1..value.len() - 1].to_string());
+    }
+
+    if value.starts_with("''") && value.ends_with("''") {
+        return Ok(value[2..value.len() - 2].to_string());
+    }
+
+    Err(format!(
+        "Unable to detemine string type of string: {}",
+        value
+    ))
+}
+
+fn parse_multiline_string(beginn: usize, data: &str) -> Result<String, String> {
+    let mut new_str = String::from("");
+    for line in data.lines().skip(beginn + 1) {
+        if line.contains("'';") {
+            return Ok(new_str.trim().to_string());
+        }
+        new_str.push_str(format!("{}\n", line.trim()).as_str());
+    }
+
+    Err("Unable to parse String at".to_string())
 }
 
 impl BitcoinDaemonService {
+    pub fn from_string(data: &str) -> Result<BitcoinDaemonService, String> {
+        let mut config = BitcoinDaemonService::default();
+
+        let lines = data.lines();
+        for (n, line) in lines.enumerate() {
+            let new_line = &line
+                .replace("services.bitcoin.", "")
+                .replace(';', "")
+                .trim()
+                .to_string();
+
+            if let Some((key, value)) = new_line.split_once('=') {
+                match key.trim() {
+                    "enable" => match value.trim().parse() {
+                        Ok(parsed_value) => config.enabled = parsed_value,
+                        Err(_) => return Err(format!("Unable to parse line: {}", line)),
+                    },
+                    "name" => match clean_string(value.trim()) {
+                        Ok(cleaned) => config.name = Some(cleaned),
+                        Err(msg) => return Err(msg),
+                    },
+                    "user" => match clean_string(value.trim()) {
+                        Ok(cleaned) => config.user = Some(cleaned),
+                        Err(msg) => return Err(msg),
+                    },
+                    "group" => match clean_string(value.trim()) {
+                        Ok(cleaned) => config.group = Some(cleaned),
+                        Err(msg) => return Err(msg),
+                    },
+                    "package" => match clean_string(value.trim()) {
+                        Ok(cleaned) => config.package = Some(cleaned),
+                        Err(msg) => return Err(msg),
+                    },
+                    "port" => match value.trim().parse() {
+                        Ok(parsed_value) => config.port = Some(parsed_value),
+                        Err(_) => return Err(format!("Unable to parse line: {}", line)),
+                    },
+                    "txindex" => match value.trim().parse() {
+                        Ok(parsed_value) => config.tx_index = Some(parsed_value),
+                        Err(_) => return Err(format!("Unable to parse line: {}", line)),
+                    },
+                    "dbCache" => match value.trim().parse() {
+                        Ok(parsed_value) => config.db_cache = Some(parsed_value),
+                        Err(_) => return Err(format!("Unable to parse line: {}", line)),
+                    },
+                    "dataDir" => match clean_string(value.trim()) {
+                        Ok(cleaned) => config.data_dir = Some(cleaned),
+                        Err(msg) => return Err(msg),
+                    },
+                    "rpc.port" => match value.trim().parse() {
+                        Ok(parsed_value) => config.rpc_port = Some(parsed_value),
+                        Err(_) => return Err(format!("Unable to parse line: {}", line)),
+                    },
+
+                    "mainnet" => match value.trim().parse() {
+                        Ok(true) => config.network = BitcoinNetwork::Mainnet,
+                        Ok(false) => {}
+                        Err(_) => return Err(format!("Unable to parse line: {}", line)),
+                    },
+                    "testnet" => match value.trim().parse() {
+                        Ok(true) => config.network = BitcoinNetwork::Testnet,
+                        Ok(false) => {}
+                        Err(_) => return Err(format!("Unable to parse line: {}", line)),
+                    },
+                    "regtest" => match value.trim().parse() {
+                        Ok(true) => config.network = BitcoinNetwork::Regtest,
+                        Ok(false) => {}
+                        Err(_) => return Err(format!("Unable to parse line: {}", line)),
+                    },
+                    "signet" => match value.trim().parse() {
+                        Ok(true) => config.network = BitcoinNetwork::Signet,
+                        Ok(false) => {}
+                        Err(_) => return Err(format!("Unable to parse line: {}", line)),
+                    },
+                    "zmqpubrawtx" => match clean_string(value.trim()) {
+                        Ok(cleaned) => config.zmqpubrawtx = Some(cleaned),
+                        Err(msg) => return Err(msg),
+                    },
+                    "zmqpubrawblock" => match clean_string(value.trim()) {
+                        Ok(cleaned) => config.zmqpubrawblock = Some(cleaned),
+                        Err(msg) => return Err(msg),
+                    },
+                    "extraConfig" => match parse_multiline_string(n, data) {
+                        Ok(cleaned) => config.extra_config = Some(cleaned),
+                        Err(msg) => return Err(msg),
+                    },
+
+                    _ => continue,
+                }
+            }
+        }
+
+        Ok(config)
+    }
+
     pub fn render(&self) -> (format::Status, String) {
         if let Err(e) = self.validate(&()) {
             panic!("invalid config: {e}")
         }
 
         let mut res = utils::AutoLineString::from("{");
-        res.push_line("services.bitcoin = {");
-        res.push_line("enable = true;");
+        match self.enabled {
+            true => res.push_line("services.bitcoin.enable = true;"),
+            false => res.push_line("services.bitcoin.enable = false;"),
+        };
+
+        if let Some(v) = &self.name {
+            res.push_line(format!("services.bitcoin.name = \"{}\";", v).as_str())
+        }
+
+        if let Some(v) = &self.group {
+            res.push_line(format!("services.bitcoin.group = \"{}\";", v).as_str())
+        }
+
+        if let Some(v) = &self.package {
+            res.push_line(format!("services.bitcoin.package = \"{}\";", v).as_str())
+        }
+
         match self.network {
             // we could omit mainnet as it is default, but we'll add the field for clarity
-            BitcoinNetwork::Mainnet => res.push_line("mainnet = true;"),
-            BitcoinNetwork::Testnet => res.push_line("testnet = true;"),
-            BitcoinNetwork::Regtest => res.push_line("regtest = true;"),
-            BitcoinNetwork::Signet => res.push_line("signet = true;"),
+            BitcoinNetwork::Mainnet => res.push_line("services.bitcoin.mainnet = true;"),
+            BitcoinNetwork::Testnet => res.push_line("services.bitcoin.testnet = true;"),
+            BitcoinNetwork::Regtest => res.push_line("services.bitcoin.regtest = true;"),
+            BitcoinNetwork::Signet => res.push_line("services.bitcoin.signet = true;"),
         };
-        match &self.rpc_users {
-            Some(value) if value.len() == 1 => {
-                res.push_line(format!("rpc.users.{} = {{", value[0].name).as_str());
-                res.push_line(format!("name = \"{}\"", value[0].name).as_str());
-                res.push_line(format!("passwordHMAC = \"{}\"", value[0].password_hmac).as_str());
+
+        if !self.rpc_users.is_empty() {
+            res.push_line("services.bitcoin.rpc.users = {");
+            for user in &self.rpc_users {
+                res.push_line(format!("{} = {{", user.name).as_str());
+                res.push_line(format!("passwordHMAC = \"{}\";", user.password_hmac).as_str());
                 res.push_line("};");
             }
-            Some(value) if value.len() > 1 => {
-                for u in value {
-                    res.push_line("rpc.users = {");
-                    res.push_line(format!("{} = {{", u.name).as_str());
-                    res.push_line(format!("passwordHMAC = \"{}\"", u.password_hmac).as_str());
-                    res.push_line("};};");
-                }
-            }
-            Some(_) => {}
-            None => {}
+            res.push_line("};");
         }
+
         if let Some(v) = &self.rpc_port {
-            res.push_line(format!("rpc.port = {};", v).as_str());
+            res.push_line(format!("services.bitcoin.rpc.port = {};", v).as_str());
         }
+
         if let Some(v) = &self.user {
-            res.push_line(format!("user = \"{}\";", v).as_str());
+            res.push_line(format!("services.bitcoin.user = \"{}\";", v).as_str());
         }
+
         if let Some(v) = &self.prune {
             match v {
                 PruneOptions::Disable => {}
-                PruneOptions::Manual => res.push_line("prune = 1;"),
+                PruneOptions::Manual => res.push_line("services.bitcoin.prune = 1;"),
                 PruneOptions::Automatic { prune_at: field } => {
-                    res.push_line(format!("prune = {};", field).as_str())
+                    res.push_line(format!("services.bitcoin.prune = {};", field).as_str())
                 }
             }
         }
 
-        res.push_line("};}");
+        if let Some(v) = &self.port {
+            res.push_line(format!("services.bitcoin.port = {};", v).as_str())
+        }
 
+        if let Some(v) = &self.db_cache {
+            res.push_line(format!("services.bitcoin.dbCache = {};", v).as_str())
+        }
+
+        if let Some(v) = &self.tx_index {
+            res.push_line(format!("services.bitcoin.txindex = {};", v).as_str())
+        }
+
+        if let Some(v) = &self.zmqpubrawblock {
+            res.push_line(format!("services.bitcoin.zmqpubrawblock = \"{}\";", v.trim()).as_str())
+        }
+
+        if let Some(v) = &self.zmqpubrawtx {
+            res.push_line(format!("services.bitcoin.zmqpubrawtx = \"{}\";", v.trim()).as_str())
+        }
+
+        if let Some(v) = &self.data_dir {
+            res.push_line(format!("services.bitcoin.dataDir = \"{}\";", v).as_str())
+        }
+
+        if let Some(v) = &self.extra_config {
+            res.push_line(format!("services.bitcoin.extraConfig = ''\n{}\n'';", v.trim()).as_str())
+        }
+
+        res.push_line("}");
         format::in_memory("<convert bitcoind>".to_string(), res.to_string())
     }
 }
 
 fn _get_network_test_string(network: &BitcoinNetwork) -> String {
-    format::in_memory(
+    let (status, res) = format::in_memory(
         "".to_string(),
         match network {
             BitcoinNetwork::Mainnet => {
-                "{ services.bitcoin = { enable = true; mainnet = true; }; }".to_string()
+                "{ services.bitcoin.enable = true; services.bitcoin.mainnet = true; }".to_string()
             }
             BitcoinNetwork::Testnet => {
-                "{ services.bitcoin = { enable = true; testnet = true; }; }".to_string()
+                "{ services.bitcoin.enable = true; services.bitcoin.testnet = true; }".to_string()
             }
             BitcoinNetwork::Regtest => {
-                "{ services.bitcoin = { enable = true; regtest = true; }; }".to_string()
+                "{ services.bitcoin.enable = true; services.bitcoin.regtest = true; }".to_string()
             }
             BitcoinNetwork::Signet => {
-                "{ services.bitcoin = { enable = true; signet = true; }; }".to_string()
+                "{ services.bitcoin.enable = true; services.bitcoin.signet = true; }".to_string()
             }
         },
-    )
-    .1
+    );
+
+    match status {
+        format::Status::Error(err) => eprintln!("Unable to format {}", err),
+        format::Status::Changed(_) => {}
+    }
+
+    res
 }
 
 #[cfg(test)]
@@ -252,21 +430,20 @@ mod tests {
             ..BitcoinDaemonService::default()
         };
 
+        assert!(!service.enabled);
         assert_eq!(service.name, Some("TestInstance".to_string()));
         assert_eq!(service.user, Some("testuser".to_string()));
         assert_eq!(service.rpc_port, Some(9333));
         assert_eq!(service.port, Some(8333));
         assert_eq!(service.network, BitcoinNetwork::Mainnet);
-        assert!(service.rpc_users.is_none());
+        assert!(service.rpc_users.is_empty());
         assert!(service.prune.is_none());
-        assert!(service.pid_file.is_none());
         assert!(service.package.is_none());
         assert!(service.group.is_none());
         assert!(service.extra_config.is_none());
         assert!(service.extra_cmd_line_options.is_none());
         assert!(service.db_cache.is_none());
         assert!(service.data_dir.is_none());
-        assert!(service.config_file_path.is_none());
     }
 
     #[test]
@@ -277,10 +454,25 @@ mod tests {
             port: Some(8333),
             rpc_port: Some(9333),
             prune: Some(PruneOptions::Automatic { prune_at: 1024 }),
+            rpc_users: vec![
+                BitcoinDaemonServiceRPCUser {
+                    name: "testuser1".to_string(),
+                    password_hmac: "".to_string(),
+                },
+                BitcoinDaemonServiceRPCUser {
+                    name: "testuser2".to_string(),
+                    password_hmac: "".to_string(),
+                },
+            ],
             ..BitcoinDaemonService::default()
         };
+        let (format_status, nix_file) = service.render();
+        match format_status {
+            format::Status::Error(err) => eprintln!("Unable to format {}", err),
+            format::Status::Changed(_) => println!("Format success"),
+        }
 
-        println!("{}", service.render().1);
+        println!("{}", nix_file);
 
         // assert!(false);
     }
@@ -312,24 +504,215 @@ mod tests {
     }
 
     #[test]
-    fn test_prune_automatic_options() {
-        let service = BitcoinDaemonService {
-            prune: Some(PruneOptions::Automatic { prune_at: 1024 }),
+    fn test_read() {
+        let orig_service = BitcoinDaemonService {
+            enabled: true,
+            name: Some("TestInstance".to_string()),
+            user: Some("TestUser".to_string()),
+            group: Some("TestGroup".to_string()),
+            port: Some(8343),
+            rpc_port: Some(9343),
+            package: Some("TestPackageName".to_string()),
+            db_cache: Some(512),
+            tx_index: Some(true),
+            data_dir: Some("/data/dir".to_string()),
+            zmqpubrawtx: Some("zmqpubrawtx".to_string()),
+            zmqpubrawblock: Some("zmqpubrawblock".to_string()),
+            extra_config: Some(
+                "
+setting1=2143
+setting2=4534
+"
+                .to_string(),
+            ),
             ..BitcoinDaemonService::default()
         };
 
-        let res = service.validate(&());
-        assert!(res.is_ok());
-        let nix = service.render().1;
-        assert!(nix.validate_contains("prune = 1024;"));
-
-        let service_nok = BitcoinDaemonService {
-            prune: Some(PruneOptions::Automatic { prune_at: 234 }),
-            ..BitcoinDaemonService::default()
-        };
-        let res = service_nok.validate(&());
-        assert!(res.is_err());
+        let (status, source) = orig_service.render();
+        assert!(!matches!(status, format::Status::Error(_)));
+        println!("{}", source);
+        let res = BitcoinDaemonService::from_string(&source);
+        match res {
+            Ok(read_service) => {
+                assert!(read_service.enabled, "Testing whether enabled is read.");
+                assert!(
+                    read_service.name.is_some(),
+                    "Testing whether name is Some()"
+                );
+                assert_eq!(
+                    read_service.name.as_ref().unwrap(),
+                    orig_service.name.as_ref().unwrap(),
+                    "Testing whether the correct name is being read."
+                );
+                assert!(
+                    read_service.user.is_some(),
+                    "Testing whether user is Some()"
+                );
+                assert_eq!(
+                    read_service.user.as_ref().unwrap(),
+                    orig_service.user.as_ref().unwrap(),
+                    "Testing whether user is being read."
+                );
+                assert!(
+                    read_service.group.is_some(),
+                    "Testing whether group is Some()"
+                );
+                assert_eq!(
+                    read_service.group.as_ref().unwrap(),
+                    orig_service.group.as_ref().unwrap(),
+                    "Testing whether group is being read."
+                );
+                assert!(
+                    read_service.port.is_some(),
+                    "Testing whether port is Some()"
+                );
+                assert_eq!(
+                    read_service.port.as_ref().unwrap(),
+                    orig_service.port.as_ref().unwrap(),
+                    "Testing whether port is being read."
+                );
+                assert!(
+                    read_service.rpc_port.is_some(),
+                    "Testing whether rpc_port is Some()"
+                );
+                assert_eq!(
+                    read_service.rpc_port.as_ref().unwrap(),
+                    orig_service.rpc_port.as_ref().unwrap(),
+                    "Testing whether port is being read."
+                );
+                assert!(
+                    read_service.package.is_some(),
+                    "Testing whether package is Some()"
+                );
+                assert_eq!(
+                    read_service.package.as_ref().unwrap(),
+                    orig_service.package.as_ref().unwrap(),
+                    "Testing whether port is being read."
+                );
+                assert!(
+                    read_service.db_cache.is_some(),
+                    "Testing whether db_cache is Some()"
+                );
+                assert_eq!(
+                    read_service.db_cache.as_ref().unwrap(),
+                    orig_service.db_cache.as_ref().unwrap(),
+                    "Testing whether port is being read."
+                );
+                assert!(
+                    read_service.tx_index.is_some(),
+                    "Testing whether tx_index is Some()"
+                );
+                assert_eq!(
+                    read_service.tx_index.as_ref().unwrap(),
+                    orig_service.tx_index.as_ref().unwrap(),
+                    "Testing whether port is being read."
+                );
+                assert!(
+                    read_service.data_dir.is_some(),
+                    "Testing whether data_dir is Some()"
+                );
+                assert_eq!(
+                    read_service.data_dir.as_ref().unwrap(),
+                    orig_service.data_dir.as_ref().unwrap(),
+                    "Testing whether port is being read."
+                );
+                assert!(
+                    read_service.zmqpubrawtx.is_some(),
+                    "Testing whether zmqpubrawtx is Some()"
+                );
+                assert_eq!(
+                    read_service.zmqpubrawtx.as_ref().unwrap(),
+                    orig_service.zmqpubrawtx.as_ref().unwrap(),
+                    "Testing whether port is being read."
+                );
+                assert!(
+                    read_service.zmqpubrawblock.is_some(),
+                    "Testing whether zmqpubrawblock is Some()"
+                );
+                assert_eq!(
+                    read_service.zmqpubrawblock.as_ref().unwrap(),
+                    orig_service.zmqpubrawblock.as_ref().unwrap(),
+                    "Testing whether port is being read."
+                );
+                assert!(
+                    read_service.extra_config.is_some(),
+                    "Testing whether extra_config is Some()"
+                );
+                assert_eq!(
+                    read_service.extra_config.as_ref().unwrap().trim(),
+                    orig_service.extra_config.as_ref().unwrap().trim(),
+                    "Testing whether port is being read."
+                );
+            }
+            Err(err) => panic!("Parsing err: {err}"),
+        }
     }
+
+    // #[test]
+    // fn test_read_rpc_users() {
+    //     let service = BitcoinDaemonService {
+    //         rpc_users: vec![
+    //             BitcoinDaemonServiceRPCUser {
+    //                 name: "testuser1".to_string(),
+    //                 password_hmac: "".to_string(),
+    //             },
+    //             BitcoinDaemonServiceRPCUser {
+    //                 name: "testuser2".to_string(),
+    //                 password_hmac: "".to_string(),
+    //             },
+    //         ],
+    //         ..BitcoinDaemonService::default()
+    //     };
+    //
+    //     let (status, source) = service.render();
+    //     assert!(!matches!(status, format::Status::Error(_)));
+    //     let res = BitcoinDaemonService::from_string(&source);
+    //     match res {
+    //         Ok(v) => assert!(v.enabled),
+    //         Err(err) => panic!("Parsing err: {err}"),
+    //     }
+    // }
+
+    #[test]
+    fn test_read_network() {
+        let mut service = BitcoinDaemonService::default();
+
+        for network in [
+            BitcoinNetwork::Mainnet,
+            BitcoinNetwork::Testnet,
+            BitcoinNetwork::Regtest,
+            BitcoinNetwork::Signet,
+        ] {
+            service.network = network;
+            let (status, source) = service.render();
+            assert!(!matches!(status, format::Status::Error(_)));
+            let res = BitcoinDaemonService::from_string(&source);
+            match res {
+                Ok(v) => assert_eq!(v.network, network),
+                Err(err) => panic!("Parsing err: {err}"),
+            }
+        }
+    }
+
+    // #[test]
+    // fn test_render_prune_automatic_options() {
+    //     let service = BitcoinDaemonService {
+    //         prune: Some(PruneOptions::Automatic { prune_at: 1024 }),
+    //         ..BitcoinDaemonService::default()
+    //     };
+    //
+    //     let res = service.validate(&());
+    //     assert!(res.is_ok());
+    //     let nix = service.render().1;
+    //     assert!(nix.validate_contains("prune = 1024;"));
+    //
+    //     let service_nok = BitcoinDaemonService {
+    //         prune: Some(PruneOptions::Automatic { prune_at: 234 }),
+    //         ..BitcoinDaemonService::default()
+    //     };
+    //     let res = service_nok.validate(&());
+    //     assert!(res.is_err());
+    // }
 
     #[test]
     fn test_render_network() {
@@ -341,6 +724,7 @@ mod tests {
         ] {
             let nix = _get_network_test_string(&network);
             let service = BitcoinDaemonService {
+                enabled: true,
                 network,
                 ..Default::default()
             };
