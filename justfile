@@ -3,7 +3,8 @@ rust_src := "./packages"
 set positional-arguments
 
 sync-to-blitz:
-  rsync -avPzu --delete-during --progress src/ admin@192.168.8.242:/home/admin/dev
+  rsync -avPzu --delete-during --progress src/ admin@192.168.8.242:/home/admin/dev/sys
+  rsync -avPzu --delete-during --progress ../api/nixosify/ admin@192.168.8.242:/home/admin/dev/api
 
 # format all Nix files
 format:

@@ -8,8 +8,10 @@
     ./hardware-configuration.nix
     ./apps/bitcoind.nix
     ./apps/lnd.nix
+    ./apps/blitz_api.nix
   ];
 
+  # boot.isContainer = true;
   boot.loader.grub.enable = false;
   boot.loader.generic-extlinux-compatible.enable = true;
 
@@ -32,21 +34,30 @@
   };
 
   environment.systemPackages = with pkgs; [
+    git
     neovim
-    wget
   ];
 
-  # Enable the OpenSSH daemon.
-  services.openssh = {
-    enable = true;
-    ports = [22];
-    settings = {
-      PasswordAuthentication = true;
-      AllowUsers = ["admin"];
-      UseDns = true;
-      X11Forwarding = false;
-      PermitRootLogin = "prohibit-password";
+  services = {
+    blitzapi = {
+      enable = true;
+      host = "0.0.0.0";
+      port = 8080;
     };
+
+    openssh = {
+      enable = true;
+      ports = [22];
+      settings = {
+        PasswordAuthentication = true;
+        AllowUsers = ["admin"];
+        UseDns = true;
+        X11Forwarding = false;
+        PermitRootLogin = "prohibit-password";
+      };
+    };
+
+    redis.servers."".enable = true;
   };
 
   networking.firewall.allowedTCPPorts = [22];
