@@ -29,7 +29,9 @@
   users.users.admin = {
     isNormalUser = true;
     extraGroups = ["wheel"]; # Enable ‘sudo’ for the user.
-    packages = with pkgs; [
+    packages = with pkgs; [];
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC7M6/mq5kcNEjSiUrb8syQT+Y9uY4AHdHoWITIQ463Q some.fusion@gmail.com"
     ];
   };
 
@@ -38,13 +40,15 @@
     neovim
   ];
 
-  services = {
-    blitzapi = {
-      enable = true;
-      host = "0.0.0.0";
-      port = 8080;
+  programs = {
+    bash = {
+      shellAliases = {
+        rebuild = "cd ~/dev/sys/ && rm -f flake.lock && sudo nixos-rebuild switch --show-trace  --print-build-logs --verbose --impure --flake .#tbnix";
+      };
     };
+  };
 
+  services = {
     openssh = {
       enable = true;
       ports = [22];
