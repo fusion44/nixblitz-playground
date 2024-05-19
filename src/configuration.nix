@@ -26,27 +26,28 @@
     useXkbConfig = true; # use xkb.options in tty.
   };
 
-  users.users.admin = {
-    isNormalUser = true;
-    extraGroups = ["wheel"]; # Enable ‘sudo’ for the user.
-    packages = with pkgs; [];
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC7M6/mq5kcNEjSiUrb8syQT+Y9uY4AHdHoWITIQ463Q some.fusion@gmail.com"
-    ];
+  users = {
+    defaultUserShell = pkgs.nushell;
+    users.admin = {
+      isNormalUser = true;
+      extraGroups = ["wheel"]; # Enable ‘sudo’ for the user.
+      packages = with pkgs; [];
+      openssh.authorizedKeys.keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC7M6/mq5kcNEjSiUrb8syQT+Y9uY4AHdHoWITIQ463Q some.fusion@gmail.com"
+      ];
+    };
   };
 
   environment.systemPackages = with pkgs; [
+    bat
+    bottom
+    fzf
     git
     neovim
+    ripgrep
   ];
 
-  programs = {
-    bash = {
-      shellAliases = {
-        rebuild = "cd ~/dev/sys/ && rm -f flake.lock && sudo nixos-rebuild switch --show-trace  --print-build-logs --verbose --impure --flake .#tbnix";
-      };
-    };
-  };
+  programs = {};
 
   services = {
     openssh = {
