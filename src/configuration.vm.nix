@@ -1,23 +1,22 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }: {
   imports = [
-    ./hardware-configuration.nix
     ./apps/bitcoind.nix
     ./apps/lnd.nix
     ./apps/blitz_api.nix
   ];
 
-  # boot.isContainer = true;
   boot.loader.grub.enable = false;
   boot.loader.generic-extlinux-compatible.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
 
   nix.extraOptions = "experimental-features = nix-command flakes";
 
-  networking.hostName = "tbnix"; # Define your hostname.
+  nixpkgs.config.allowUnfree = true;
+  networking.hostName = "tbnix_vm"; # Define your hostname.
   time.timeZone = "Europe/Berlin";
 
   i18n.defaultLocale = "en_US.UTF-8";
@@ -26,15 +25,22 @@
     useXkbConfig = true; # use xkb.options in tty.
   };
 
+  virtualisation.vmVariant = {
+    # following configuration is added only when building VM with build-vm
+    virtualisation = {
+      memorySize = 2048; # Use 2048MiB memory.
+      cores = 3;
+      graphics = false;
+    };
+  };
+
   users = {
     defaultUserShell = pkgs.nushell;
     users.admin = {
+      initialPassword = "test";
       isNormalUser = true;
-      extraGroups = ["wheel"]; # Enable ‘sudo’ for the user.
-      packages = with pkgs; [];
-      openssh.authorizedKeys.keys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC7M6/mq5kcNEjSiUrb8syQT+Y9uY4AHdHoWITIQ463Q some.fusion@gmail.com"
-      ];
+      extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+      packages = with pkgs; [ ];
     };
   };
 
@@ -47,15 +53,15 @@
     ripgrep
   ];
 
-  programs = {};
+  programs = { };
 
   services = {
     openssh = {
       enable = true;
-      ports = [22];
+      ports = [ 22 ];
       settings = {
         PasswordAuthentication = true;
-        AllowUsers = ["admin"];
+        AllowUsers = [ "admin" ];
         UseDns = true;
         X11Forwarding = false;
         PermitRootLogin = "prohibit-password";
@@ -65,7 +71,7 @@
     redis.servers."".enable = true;
   };
 
-  networking.firewall.allowedTCPPorts = [22];
+  networking.firewall.allowedTCPPorts = [ 22 ];
 
   system.stateVersion = "23.11"; # Did you read the comment?
 }

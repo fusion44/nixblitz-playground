@@ -18,3 +18,7 @@ lint:
 # run the CLI, any args are passed to the CLI unaltered 
 run-cli *args='':
   cd {{rust_src}} && cargo run $@
+
+run-in-vm:
+	cd src && nixos-rebuild build-vm --flake .#devsys && ./result/bin/run-tbnix-vm
+

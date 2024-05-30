@@ -11,6 +11,15 @@
     blitz-api,
     ...
   }: {
+    nixosConfigurations.devsys = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        nix-bitcoin.nixosModules.default
+        blitz-api.nixosModules.default
+        ./configuration.vm.nix
+      ];
+    };
+
     nixosConfigurations.tbnix = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
       modules = [
