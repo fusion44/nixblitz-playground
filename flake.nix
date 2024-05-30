@@ -25,7 +25,6 @@
             rustfmt
             pre-commit # https://pre-commit.com
             rustPackages.clippy # rust linter
-            sshpass # to automatically login to a remote machine
           ];
           RUST_SRC_PATH = rustPlatform.rustLibSrc;
         };
