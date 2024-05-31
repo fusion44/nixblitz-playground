@@ -8,6 +8,7 @@
     ./apps/bitcoind.nix
     ./apps/lnd.nix
     ./apps/blitz_api.nix
+    ./apps/blitz_web.nix
   ];
 
   boot.loader.grub.enable = false;
