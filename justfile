@@ -5,6 +5,7 @@ set positional-arguments
 sync-to-blitz:
   rsync -avPzu --delete-during --progress src/ admin@192.168.8.242:/home/admin/dev/sys
   rsync -avPzu --delete-during --progress ../api/nixosify/ admin@192.168.8.242:/home/admin/dev/api
+  rsync -avPzu --delete-during --progress ../web/nixosify/ admin@192.168.8.242:/home/admin/dev/web
   rsync -avPzu --delete-during --progress --exclude="history.txt" src/configs/nushell/ admin@192.168.8.242:/home/admin/.config/nushell
 
 # format all Nix files

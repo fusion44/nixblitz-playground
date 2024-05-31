@@ -1,7 +1,8 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }: {
   imports = [
     ./apps/bitcoind.nix
@@ -39,8 +40,8 @@
     users.admin = {
       initialPassword = "test";
       isNormalUser = true;
-      extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-      packages = with pkgs; [ ];
+      extraGroups = ["wheel"]; # Enable ‘sudo’ for the user.
+      packages = with pkgs; [];
     };
   };
 
@@ -53,15 +54,15 @@
     ripgrep
   ];
 
-  programs = { };
+  programs = {};
 
   services = {
     openssh = {
       enable = true;
-      ports = [ 22 ];
+      ports = [22];
       settings = {
         PasswordAuthentication = true;
-        AllowUsers = [ "admin" ];
+        AllowUsers = ["admin"];
         UseDns = true;
         X11Forwarding = false;
         PermitRootLogin = "prohibit-password";
@@ -71,7 +72,7 @@
     redis.servers."".enable = true;
   };
 
-  networking.firewall.allowedTCPPorts = [ 22 ];
+  networking.firewall.allowedTCPPorts = [22];
 
   system.stateVersion = "23.11"; # Did you read the comment?
 }

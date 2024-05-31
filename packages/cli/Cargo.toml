@@ -5,4 +5,5 @@ authors 	 = ["fusion44"]
 edition = "2021"
 
 [dependencies]
+material = { version = "0.1.1", features = ["ratatui"] }
 nixbitcoin-config = { path = "../nixbitcoin-config" }

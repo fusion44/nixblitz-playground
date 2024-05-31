@@ -773,3 +773,20 @@ alias ports = netstat -tulanp
 alias readlink = readlink -f
 alias apijournal = journalctl -u blitz-api.service
 alias apijournalf = journalctl -u blitz-api.service -f
+alias nginxjournalf = journalctl -u nginx.service -f -n 50
+
+# [regtest] Sends a transaction using the default loaded wallet
+def regsend [
+  address: string, # The address to send the funds to
+  amount: float = 15.0 # The amount of funds to send in Bitcoin
+  ] {
+  bitcoin-cli -named -regtest sendtoaddress address="$address" amount=$amount fee_rate=100
+}
+
+# [regtest] Generates regtest blocks 
+def reggen [
+  num_blocks: int=10 # The number of blocks to generate
+  ] {
+  bitcoin-cli -generate $num_blocks
+}
+
