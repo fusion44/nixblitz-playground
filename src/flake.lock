@@ -7,10 +7,10 @@
         "poetry2nix": "poetry2nix"
       },
       "locked": {
-        "dirtyRev": "09a8993746b37d10770d00e64e1e0db70f77d750-dirty",
-        "dirtyShortRev": "09a8993-dirty",
-        "lastModified": 1716662840,
-        "narHash": "sha256-ZoacI9iiw8Hid3gtkxiZZnzhj2E3FIe5wJE3Gf+mjRc=",
+        "dirtyRev": "3014ef7e1da9024f6ba3606a0088d12b778dc1dc-dirty",
+        "dirtyShortRev": "3014ef7-dirty",
+        "lastModified": 1717144032,
+        "narHash": "sha256-GV0Y9WZAteJ7hKxpUO8jmEtO2tGpX+QtUK3O6w0se/4=",
         "type": "git",
         "url": "file:///home/f44/dev/blitz/api/nixosify"
       },
@@ -25,10 +25,10 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "dirtyRev": "5e730d33466c3ce7596132e3b2cb04f831a26dd2-dirty",
-        "dirtyShortRev": "5e730d3-dirty",
-        "lastModified": 1716714050,
-        "narHash": "sha256-qeRHsrMdVSZ56eMYk/CvrsFkTNOFB0L2kwm6G9+3l2Y=",
+        "dirtyRev": "5a76530b9bb75f1fc21252d49885bba68855cdf8-dirty",
+        "dirtyShortRev": "5a76530-dirty",
+        "lastModified": 1717228120,
+        "narHash": "sha256-Yhf9zvSoNZqsL7/UIXwaKD8dqzoe7BMbRrF3KEWwwTI=",
         "type": "git",
         "url": "file:///home/f44/dev/blitz/web/nixosify"
       },
@@ -243,11 +243,11 @@
     },
     "nixpkgs_4": {
       "locked": {
-        "lastModified": 1713725259,
-        "narHash": "sha256-9ZR/Rbx5/Z/JZf5ehVNMoz/s5xjpP0a22tL6qNvLt5E=",
+        "lastModified": 1716991068,
+        "narHash": "sha256-Av0UWCCiIGJxsZ6TFc+OiKCJNqwoxMNVYDBChmhjNpo=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "a5e4bbcb4780c63c79c87d29ea409abf097de3f7",
+        "rev": "25cf937a30bf0801447f6bf544fc7486c6309234",
         "type": "github"
       },
       "original": {
