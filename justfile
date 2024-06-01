@@ -20,6 +20,20 @@ lint:
 run-cli *args='':
   cd {{rust_src}} && cargo run $@
 
-run-in-vm:
-	cd src && nixos-rebuild build-vm --flake .#devsys && ./result/bin/run-tbnix-vm
+# builds the current config as a qemu vm
+vm-build:
+	cd src && export QEMU_NET_OPTS="hostfwd=tcp::2221-:22,hostfwd=tcp::8080-:80" && nixos-rebuild build-vm --flake .#devsys
+
+# runs the current qemu vm
+vm-run:
+	./src/result/bin/run-tbnix_vm-vm
+
+# ssh into the currently running qemu vm
+vm-ssh:
+	ssh -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no admin@localhost -p 2221
+
+# resets the vm by deleting the tbnix_vm.qcow2 file
+vm-reset:
+	rm -i tbnix_vm.qcow2
+
 
