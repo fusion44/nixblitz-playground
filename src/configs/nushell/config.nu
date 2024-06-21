@@ -775,6 +775,16 @@ alias apijournal = journalctl -u blitz-api.service
 alias apijournalf = journalctl -u blitz-api.service -f
 alias nginxjournalf = journalctl -u nginx.service -f -n 50
 
+# Prints the current nginx.conf file in use using the bat command
+def batnginxconf  [] {
+  let res = systemctl status nginx.service
+  if res =~ "could not be found" {
+    return "nginx not running"
+  }
+
+  $res | split row "\n" | where { str contains 'nginx.conf syntax is ok' } | first | split row " syntax" | first | split row "file " | get 1 | bat $in
+}
+
 # [regtest] Sends a transaction using the default loaded wallet
 def regsend [
   address: string, # The address to send the funds to
