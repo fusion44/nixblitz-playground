@@ -773,6 +773,7 @@ alias ports = netstat -tulanp
 alias readlink = readlink -f
 alias apijournal = journalctl -u blitz-api.service
 alias apijournalf = journalctl -u blitz-api.service -f
+alias apibatdotenv = sudo bat /var/lib/blitz_api/.env
 alias nginxjournalf = journalctl -u nginx.service -f -n 50
 
 # Prints the current nginx.conf file in use using the bat command
