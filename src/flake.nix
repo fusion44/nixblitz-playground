@@ -4,10 +4,10 @@
     nix-bitcoin.url = "github:fort-nix/nix-bitcoin";
     # blitz-api.url = "/home/f44/dev/blitz/api/nixosify";
     # blitz-web.url = "/home/f44/dev/blitz/web/nixosify";
-    blitz-api.url = "/home/admin/dev/api";
-    blitz-web.url = "/home/admin/dev/web";
-    # blitz-api.url = "github:fusion44/blitz_api/nixosify";
-    # blitz-web.url = "github:fusion44/raspiblitz-web/nixosify";
+    # blitz-api.url = "/home/admin/dev/api";
+    # blitz-web.url = "/home/admin/dev/web";
+    blitz-api.url = "github:fusion44/blitz_api/nixosify";
+    blitz-web.url = "github:fusion44/raspiblitz-web/nixosify";
   };
 
   outputs = inputs @ {
@@ -24,7 +24,7 @@
         nix-bitcoin.nixosModules.default
         blitz-api.nixosModules.default
         blitz-web.nixosModules.default
-        ./configuration.vm.nix
+        ./vm/configuration.nix
       ];
     };
 
@@ -34,7 +34,7 @@
         nix-bitcoin.nixosModules.default
         blitz-api.nixosModules.default
         blitz-web.nixosModules.default
-        ./configuration.pi.nix
+        ./pi/configuration.nix
       ];
     };
   };

@@ -7,16 +7,18 @@
         "poetry2nix": "poetry2nix"
       },
       "locked": {
-        "dirtyRev": "3014ef7e1da9024f6ba3606a0088d12b778dc1dc-dirty",
-        "dirtyShortRev": "3014ef7-dirty",
-        "lastModified": 1717144032,
-        "narHash": "sha256-GV0Y9WZAteJ7hKxpUO8jmEtO2tGpX+QtUK3O6w0se/4=",
-        "type": "git",
-        "url": "file:///home/f44/dev/blitz/api/nixosify"
+        "lastModified": 1719069136,
+        "narHash": "sha256-WlQrEZ66tv2HIhlmJDdyA/DlOWoC6n5Rfj6vPJ051Tk=",
+        "owner": "fusion44",
+        "repo": "blitz_api",
+        "rev": "9c43ceded1027388110b47b5833902617c84ee13",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///home/f44/dev/blitz/api/nixosify"
+        "owner": "fusion44",
+        "ref": "nixosify",
+        "repo": "blitz_api",
+        "type": "github"
       }
     },
     "blitz-web": {
@@ -25,16 +27,18 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "dirtyRev": "5a76530b9bb75f1fc21252d49885bba68855cdf8-dirty",
-        "dirtyShortRev": "5a76530-dirty",
-        "lastModified": 1717228120,
-        "narHash": "sha256-Yhf9zvSoNZqsL7/UIXwaKD8dqzoe7BMbRrF3KEWwwTI=",
-        "type": "git",
-        "url": "file:///home/f44/dev/blitz/web/nixosify"
+        "lastModified": 1719068167,
+        "narHash": "sha256-iKgxb25f+Fnx9mURewRdTOgDbQkc0PUXUY3Z5mNucc8=",
+        "owner": "fusion44",
+        "repo": "raspiblitz-web",
+        "rev": "323058a5069f38400d0c98666e7b4edb5ed40960",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///home/f44/dev/blitz/web/nixosify"
+        "owner": "fusion44",
+        "ref": "nixosify",
+        "repo": "raspiblitz-web",
+        "type": "github"
       }
     },
     "extra-container": {

@@ -5,11 +5,10 @@
   ...
 }: {
   imports = [
-    ./apps/bitcoind.nix
     ./apps/lnd.nix
     ./apps/blitz_api.nix
     ./apps/blitz_web.nix
-    ./configuration.common.nix
+    ../configuration.common.nix
   ];
 
   boot.loader.grub.enable = false;
