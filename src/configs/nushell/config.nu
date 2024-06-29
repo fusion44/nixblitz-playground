@@ -775,6 +775,9 @@ alias apijournal = journalctl -u blitz-api.service
 alias apijournalf = journalctl -u blitz-api.service -f
 alias apibatdotenv = sudo bat /var/lib/blitz_api/.env
 alias nginxjournalf = journalctl -u nginx.service -f -n 50
+alias bitcoindjournal = journalctl -u bitcoind.service
+alias bitcoindjournalf = journalctl -u bitcoind.service -f
+alias bitcoindbatcfg = sudo bat /var/lib/bitcoind/bitcoin.conf
 
 # Prints the current nginx.conf file in use using the bat command
 def batnginxconf [] {
