@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     nix-bitcoin.url = "github:fort-nix/nix-bitcoin";
     # blitz-api.url = "/home/f44/dev/blitz/api/nixosify";
     # blitz-web.url = "/home/f44/dev/blitz/web/nixosify";
@@ -18,7 +18,7 @@
     blitz-web,
     ...
   }: {
-    nixosConfigurations.devsys = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.tbnixvm = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
         nix-bitcoin.nixosModules.default
@@ -28,7 +28,7 @@
       ];
     };
 
-    nixosConfigurations.tbnix = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.tbnixpi = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
       modules = [
         nix-bitcoin.nixosModules.default

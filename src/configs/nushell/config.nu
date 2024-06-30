@@ -759,9 +759,17 @@ $env.config = {
 }
 
 def rebuild [] {
+  let hostname = sys | get host.hostname
   cd ~/dev/sys/
   rm -f flake.lock
-  sudo nixos-rebuild switch --show-trace  --print-build-logs --verbose --impure --flake .#tbnix
+
+  if $hostname == "tbnixvm" {
+    sudo nixos-rebuild switch --show-trace  --print-build-logs --verbose --impure --flake .#tbnixvm
+  } else if $hostname == "tbnixpi" {
+    sudo nixos-rebuild switch --show-trace  --print-build-logs --verbose --impure --flake .#tbnixpi
+  } else {
+    print $"Unknown hostname: ($hostname). Unable to build."
+  }
 }
 
 alias cp = cp -i

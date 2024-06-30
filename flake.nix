@@ -25,6 +25,7 @@
             rustfmt
             pre-commit # https://pre-commit.com
             rustPackages.clippy # rust linter
+            qemu
           ];
           RUST_SRC_PATH = rustPlatform.rustLibSrc;
         };
