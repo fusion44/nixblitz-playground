@@ -17,6 +17,7 @@
       devShell = with pkgs;
         mkShell {
           buildInputs = [
+            nixd
             alejandra # nix formatter
             cargo # rust package manager
             rust-analyzer

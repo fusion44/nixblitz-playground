@@ -758,10 +758,19 @@ $env.config = {
     ]
 }
 
-def rebuild [] {
+# rebuild the system
+def rebuild [
+  --rmlock # deletes the flake.lock file
+] {
+  # for some reason we have to reset the git repos in the source folders sometimes
+  rm -rf ~/dev/web/.git; rm -rf ~/dev/api/.git; cd ~/dev/api/; git init .; git add --all; cd ~/dev/web; git init .; git add --all;
+
   let hostname = sys | get host.hostname
   cd ~/dev/sys/
-  rm -f flake.lock
+
+  if $rmlock {
+    rm -f flake.lock
+  }
 
   if $hostname == "tbnixvm" {
     sudo nixos-rebuild switch --show-trace  --print-build-logs --verbose --impure --flake .#tbnixvm
@@ -770,6 +779,16 @@ def rebuild [] {
   } else {
     print $"Unknown hostname: ($hostname). Unable to build."
   }
+}
+
+# get the login password from the .env file
+def get_api_login_pw [] {
+  sudo bat /var/lib/blitz_api/.env
+    | split row "\n"
+    | where { |it| $it starts-with "BAPI_NATIVE_LOGIN_PASSWORD=" }
+    | first
+    | split row "="
+    | get 1
 }
 
 alias cp = cp -i
@@ -791,6 +810,11 @@ alias bitcoindbatcfg = sudo bat /var/lib/bitcoind/bitcoin.conf
 def batnginxconf [] {
   let res = open /etc/systemd/system/nginx.service
   $res | split row "\n" | where { str starts-with 'ExecStart=/nix/store' } | first | split row "'" | get 1 | bat $in
+}
+
+# Prints the current lnd log file using the bat command
+def batlndlog [] {
+  sudo bat /var/lib/lnd/logs/bitcoin/regtest/lnd.log
 }
 
 # [regtest] Sends a transaction using the default loaded wallet
