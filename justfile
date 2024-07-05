@@ -32,7 +32,7 @@ vm-build:
 
 # runs the current qemu vm
 vm-run:
-	export QEMU_NET_OPTS="hostfwd=tcp::18444-:18444,hostfwd=tcp::10022-:22,hostfwd=tcp::8080-:80" && ./src/result/bin/run-tbnixvm-vm
+	export QEMU_NET_OPTS="hostfwd=tcp::18444-:18444,hostfwd=tcp::10022-:22,hostfwd=tcp::8080-:80,hostfwd=tcp::9735-:9735" && ./src/result/bin/run-tbnixvm-vm
 
 # ssh into the currently running qemu vm
 vm-ssh:

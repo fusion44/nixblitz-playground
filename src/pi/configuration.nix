@@ -20,5 +20,5 @@
 
   system.stateVersion = "23.11"; # Did you read the comment?
 
-  networking.firewall.allowedTCPPorts = [18332 18333 18443 18444];
+  networking.firewall.allowedTCPPorts = [18332 18333 18443 18444 9735];
 }

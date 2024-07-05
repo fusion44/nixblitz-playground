@@ -8,5 +8,6 @@
   };
   services.lnd = {
     enable = true;
+    address = "0.0.0.0";
   };
 }
